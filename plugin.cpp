@@ -51,6 +51,66 @@ void RunConsoleCommand(std::string a_command) {
     }
 }
 
+
+uint32_t GamepadKeycode(uint32_t dxScanCode) { 
+    uint32_t dxGamepadKeycode = -1;
+    RE::BSWin32GamepadDevice::Key gamepadKey = static_cast<RE::BSWin32GamepadDevice::Key>(dxScanCode);
+    switch (gamepadKey) {
+        case RE::BSWin32GamepadDevice::Key::kUp:
+            dxGamepadKeycode = 266;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kDown:
+            dxGamepadKeycode = 267;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kLeft:
+            dxGamepadKeycode = 268;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kRight:
+            dxGamepadKeycode = 269;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kStart:
+            dxGamepadKeycode = 270;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kBack:
+            dxGamepadKeycode = 271;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kLeftThumb:
+            dxGamepadKeycode = 272;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kRightThumb:
+            dxGamepadKeycode = 273;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kLeftShoulder:
+            dxGamepadKeycode = 274;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kRightShoulder:
+            dxGamepadKeycode = 275;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kA:
+            dxGamepadKeycode = 276;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kB:
+            dxGamepadKeycode = 277;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kX:
+            dxGamepadKeycode = 278;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kY:
+            dxGamepadKeycode = 279;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kLeftTrigger:
+            dxGamepadKeycode = 280;
+            break;
+        case RE::BSWin32GamepadDevice::Key::kRightTrigger:
+            dxGamepadKeycode = 281;
+            break;
+        default:
+            dxGamepadKeycode = static_cast<uint32_t>(-1);
+            break;
+    }
+    return dxGamepadKeycode;
+}
+
 class InputEventSink : public RE::BSTEventSink<RE::InputEvent*> {
     InputEventSink() = default;
     InputEventSink(const InputEventSink&) = delete;
@@ -73,7 +133,15 @@ public:
         if (event->GetEventType() == RE::INPUT_EVENT_TYPE::kButton){
             auto* buttonEvent = event->AsButtonEvent();
             auto dxScanCode = buttonEvent->GetIDCode();
-            if (dxScanCode == rightHandKey || dxScanCode == leftHandKey || dxScanCode == bothHandsKey) {
+
+            if (buttonEvent->device.get() == RE::INPUT_DEVICE::kMouse) {
+                dxScanCode += 256;
+            } else if (buttonEvent->device.get() == RE::INPUT_DEVICE::kGamepad) {
+                dxScanCode = GamepadKeycode(dxScanCode);
+            }
+            
+            //logger::info("Keycode... {}", dxScanCode);
+            if (buttonEvent && dxScanCode == rightHandKey || dxScanCode == leftHandKey || dxScanCode == bothHandsKey) {
                 const auto gameUI = RE::UI::GetSingleton();
                 if (gameUI && !gameUI->GameIsPaused()) {
                     const auto controlMap = RE::ControlMap::GetSingleton();
