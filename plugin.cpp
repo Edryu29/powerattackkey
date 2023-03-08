@@ -8,10 +8,14 @@ std::string leftHand = "player.pa ActionLeftPowerAttack";
 std::string bothHands = "player.pa ActionDualPowerAttack";
 
 bool waitPowerAttack = false;
+bool holdContinuousPA = false;
 
 int rightHandKey = -1;
 int leftHandKey = -1;
 int bothHandsKey = -1;
+
+int comboKey = -1;
+bool comboActive = false;
 
 void SetupLog() {
     auto logsFolder = SKSE::log::log_directory();
@@ -35,7 +39,9 @@ void LoadSettings() {
     rightHandKey = std::stoi(ini.GetValue("Settings", "Right Hand", "-1"));
     leftHandKey = std::stoi(ini.GetValue("Settings", "Left Hand", "-1"));
     bothHandsKey = std::stoi(ini.GetValue("Settings", "Dual Wield", "-1"));
+    comboKey = std::stoi(ini.GetValue("Settings", "Combo Key", "-1"));
     waitPowerAttack = std::stoi(ini.GetValue("Settings", "Wait Power Attack", "0"));
+    holdContinuousPA = std::stoi(ini.GetValue("Settings", "Hold Continuous Power Attack", "0"));
 
     (void)ini.SaveFile(path);
 }
@@ -53,7 +59,7 @@ void RunConsoleCommand(std::string a_command) {
 
 
 uint32_t GamepadKeycode(uint32_t dxScanCode) { 
-    uint32_t dxGamepadKeycode = -1;
+    int dxGamepadKeycode = -1;
     RE::BSWin32GamepadDevice::Key gamepadKey = static_cast<RE::BSWin32GamepadDevice::Key>(dxScanCode);
     switch (gamepadKey) {
         case RE::BSWin32GamepadDevice::Key::kUp:
@@ -139,40 +145,44 @@ public:
             } else if (buttonEvent->device.get() == RE::INPUT_DEVICE::kGamepad) {
                 dxScanCode = GamepadKeycode(dxScanCode);
             }
-            
-            //logger::info("Keycode... {}", dxScanCode);
-            if (buttonEvent && dxScanCode == rightHandKey || dxScanCode == leftHandKey || dxScanCode == bothHandsKey) {
+
+            if (buttonEvent && (buttonEvent->IsDown() || (holdContinuousPA && buttonEvent->IsHeld())) &&
+                (dxScanCode == rightHandKey || dxScanCode == leftHandKey || dxScanCode == bothHandsKey)) {
+
                 const auto gameUI = RE::UI::GetSingleton();
-                if (gameUI && !gameUI->GameIsPaused()) {
-                    const auto controlMap = RE::ControlMap::GetSingleton();
-                    const auto playerCharacter = RE::PlayerCharacter::GetSingleton();
+                const auto controlMap = RE::ControlMap::GetSingleton();
+                const auto playerCharacter = RE::PlayerCharacter::GetSingleton();
+                //logger::info("Keycode... {}", dxScanCode);
 
-                    bool bAllowRotation = false;
-                    if (waitPowerAttack) {
-                        playerCharacter->GetGraphVariableBool("bAllowRotation", bAllowRotation);
-                        // logger::info("Is powerattacking... {}", bAllowRotation);
-                    }
+                bool bAllowRotation = false;
+                if (waitPowerAttack) {
+                    playerCharacter->GetGraphVariableBool("bAllowRotation", bAllowRotation);
+                    // logger::info("Is powerattacking... {}", bAllowRotation);
+                }
 
-                    if (controlMap && !bAllowRotation && playerCharacter && controlMap->IsFightingControlsEnabled()) {
-                        const auto playerState = playerCharacter->AsActorState();
+                if (gameUI && !gameUI->GameIsPaused() && controlMap && controlMap->IsFightingControlsEnabled() &&
+                    !bAllowRotation && playerCharacter) {
+                    const auto playerState = playerCharacter->AsActorState();
 
-                        if (playerState && !playerCharacter->IsInKillMove() &&
-                            playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn &&
-                            playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal &&
-                            playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal &&
-                            playerState->GetFlyState() == RE::FLY_STATE::kNone) {
+                    if (playerState && !playerCharacter->IsInKillMove() &&
+                        playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn &&
+                        playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal &&
+                        playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal &&
+                        playerState->GetFlyState() == RE::FLY_STATE::kNone) {
 
-                            if (dxScanCode == rightHandKey) {
-                                // playerCharacter->NotifyAnimationGraph("attackPowerStartInPlace");
-                                RunConsoleCommand(rightHand);
-                            } else if (dxScanCode == leftHandKey) {
-                                RunConsoleCommand(leftHand);
-                            } else if (dxScanCode == bothHandsKey) {
-                                RunConsoleCommand(bothHands);
-                            }
+                        if (dxScanCode == rightHandKey && (comboActive || comboKey<=-1 )) {
+                            RunConsoleCommand(rightHand);
+                        } else if (dxScanCode == leftHandKey && (comboActive || comboKey <= -1)) {
+                            RunConsoleCommand(leftHand);
+                        } else if (dxScanCode == bothHandsKey && (comboActive || comboKey <= -1)) {
+                            RunConsoleCommand(bothHands);
                         }
                     }
                 }
+            }
+            if (dxScanCode == comboKey) {
+                if (buttonEvent->IsHeld()) comboActive = true;
+                if (buttonEvent->IsUp()) comboActive = false;
             }
         }
         return RE::BSEventNotifyControl::kContinue;
