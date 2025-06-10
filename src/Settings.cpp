@@ -1,6 +1,5 @@
 #include <Settings.h>
 
-
 int Settings::rightHandKey = -1;
 int Settings::leftHandKey = -1;
 int Settings::bothHandsKey = -1;
