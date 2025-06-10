@@ -1,9 +1,29 @@
 #include "InputHandler.h"
+#include "Settings.h"
 
 InputEventHandler* InputEventHandler::GetSingleton()
 {
     static InputEventHandler instance;
     return &instance;
+}
+
+void InputEventHandler::PerformAction(RE::BGSAction* action, RE::Actor* player) {
+	if (action && player) {
+        std::unique_ptr<RE::TESActionData> data(RE::TESActionData::Create());
+        data->source = RE::NiPointer<RE::TESObjectREFR>(player);
+        data->action = action;
+        typedef bool func_t(RE::TESActionData*);
+        REL::Relocation<func_t> func{ RELOCATION_ID(40551, 41557) };
+        if (func(data.get())) {
+            logger::info("Action performed successfully");
+        }
+        else {
+            logger::info("Action failed");
+        }
+	}
+    else {
+        logger::error("Action or player is null");
+    }
 }
 
 RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
@@ -21,7 +41,8 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
         }
 
         if (const auto control_map{ RE::ControlMap::GetSingleton() }; control_map->IsMovementControlsEnabled()) {
-            if (const auto player{ RE::PlayerCharacter::GetSingleton() }; player->Is3DLoaded()) {
+            const auto player = RE::PlayerCharacter::GetSingleton();
+            if (player && player->Is3DLoaded()) {
                 for (auto e{ *a_event }; e != nullptr; e = e->next) {
                     if (const auto btn_event{ e->AsButtonEvent() }) {
                         if (!btn_event->IsDown()) {
@@ -37,15 +58,18 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         if (device == kGamepad) {
                             keycode = SKSE::InputMap::GamepadMaskToKeycode(keycode);
                         }
-                        logger::info("Key Pressed: {}", keycode);
-                        // if (keycode == Settings::hotkey) {
-                        //     if (!Utility::IsUnarmedEquipped()) {
-                        //         Utility::EquipUnarmed();
-                        //     }
-                        //     else {
-                        //         Utility::UnequipUnarmed();
-                        //     }
-                        // }
+                        // logger::info("Key Pressed: {}", keycode);
+
+                        if (keycode == Settings::rightHandKey && (Settings::comboKey<=-1 || comboActive)) {
+                            logger::info("Right Hand Key Pressed");
+                            PerformAction(rightHandAction, player);
+                        } else if (keycode == Settings::leftHandKey && (Settings::comboKey<=-1 || comboActive)) {
+                            logger::info("Left Hand Key Pressed");
+                            PerformAction(leftHandAction, player);
+                        } else if (keycode == Settings::bothHandsKey && (Settings::comboKey<=-1 || comboActive)) {
+                            logger::info("Both Hands Key Pressed");
+                            PerformAction(bothHandsAction, player);
+                        }
                     }
                 }
             }

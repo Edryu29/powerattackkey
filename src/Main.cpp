@@ -1,51 +1,12 @@
 #include <InputHandler.h>
-
-std::string rightHand = "player.pa ActionRightPowerAttack";
-std::string leftHand = "player.pa ActionLeftPowerAttack";
-std::string bothHands = "player.pa ActionDualPowerAttack";
-
-bool waitPowerAttack = false;
-bool holdContinuousPA = false;
-
-int rightHandKey = -1;
-int leftHandKey = -1;
-int bothHandsKey = -1;
-
-int comboKey = -1;
-bool comboActive = false;
+#include <Settings.h>
 
 void MessageHandler(SKSE::MessagingInterface::Message* message) {
-    if (message->type == SKSE::MessagingInterface::kInputLoaded){}
+    if (message->type == SKSE::MessagingInterface::kDataLoaded){
         RE::BSInputDeviceManager::GetSingleton()->AddEventSink(InputEventHandler::GetSingleton());
-}
-
-void RunConsoleCommand(std::string a_command) {
-    const auto scriptFactory = RE::IFormFactory::GetConcreteFormFactoryByType<RE::Script>();
-    const auto script = scriptFactory ? scriptFactory->Create() : nullptr;
-    if (script) {
-        const auto selectedRef = RE::Console::GetSelectedRef();
-        script->SetCommand(a_command);
-        script->CompileAndRun(selectedRef.get());
-        delete script;
     }
 }
 
-void LoadSettings() {
-    constexpr auto path = L"Data/SKSE/Plugins/PowerAttackKey.ini";
-
-    CSimpleIniA ini;
-    ini.SetUnicode();
-    ini.LoadFile(path);
-
-    rightHandKey = std::stoi(ini.GetValue("Settings", "Right Hand", "-1"));
-    leftHandKey = std::stoi(ini.GetValue("Settings", "Left Hand", "-1"));
-    bothHandsKey = std::stoi(ini.GetValue("Settings", "Dual Wield", "-1"));
-    comboKey = std::stoi(ini.GetValue("Settings", "Combo Key", "-1"));
-    waitPowerAttack = std::stoi(ini.GetValue("Settings", "Wait Power Attack", "0"));
-    holdContinuousPA = std::stoi(ini.GetValue("Settings", "Hold Continuous Power Attack", "0"));
-
-    (void)ini.SaveFile(path);
-}
 
 void InitializeLog() {
     auto logsFolder = SKSE::log::log_directory();
@@ -65,7 +26,7 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse) {
 
     SKSE::Init(skse);
 
-    LoadSettings();
+    Settings::LoadSettings();
     logger::info("Settings loaded...");
 
     SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
