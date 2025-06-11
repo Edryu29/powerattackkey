@@ -4,20 +4,51 @@
 
 # ⚙️ Settings
 
-Key to trigger right-handed power attacks. Default is X.
-> Right Hand = 45  
+## 🎮 Keys
 
-Key to trigger left-handed power attacks.
-> Left Hand = -1
+Use this key to trigger right hand power attacks:
+> iRightHandKey = 45        ;Default is X
 
-Key to trigger dual wield power attacks.
-> Dual Wield = -1
+> iRightHandKeyAlt1 = 281   ;Default is RB
 
-You can trigger power attacks only when this key is being held.
-> Combo Key = -1
+> iRightHandKeyAlt2 = -1    ;Default is -1
 
-New power attacks cannot be triggered until previous is done. Set to 0 or 1.
-> Wait Power Attack = 1  
+Use this key to trigger left hand power attacks:
+> iLeftHandKey = -1         ;Default is -1
 
-Consecutive power attacks while the key is being held. Default is 0.
-> Consecutive Power Attack = 0
+> iLeftHandKeyAlt1 = -1     ;Default is -1
+
+> iLeftHandKeyAlt2 = -1     ;Default is -1
+
+Use this key to trigger dual wield power attacks:
+> iDualWieldKey = -1        ;Default is -1
+
+> iDualWieldKeyAlt1 = -1    ;Default is -1
+
+> iDualWieldKeyAlt2 = -1    ;Default is -1
+
+If configured, you need to held this key for the others to work:
+> iComboKey = 45            ;Default is -1
+
+> iComboKeyAlt1 = 281       ;Default is -1
+
+> iComboKeyAlt2 = -1        ;Default is -1
+
+## 🤺 Consecutive Attacks
+
+Enable consecutive attacks and the time between activations.
+If your attack speed is too fast and combos don't work, you can reduce the delay so the attack action is called more frequent.
+> bConsecutivePowerAttacks = 0
+
+> bConsecutiveLightAttacks = 0
+
+> fConsecutiveAttacksDelay = 0.5
+
+## 🥛 Stamina
+
+If enabled, you need the configured amount of stamina to trigger power attacks.
+> bPowerAttacksRequireStamina = 0
+
+> iStaminaCost1H = 15
+
+> iStaminaCost2H = 30
