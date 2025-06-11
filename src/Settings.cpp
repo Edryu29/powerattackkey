@@ -19,7 +19,8 @@ bool Settings::waitPowerAttack;
 bool Settings::holdConsecutivePA;
 bool Settings::holdConsecutiveLA;
 bool Settings::requireStaminaPA;
-int Settings::amountStaminaPA;
+int Settings::staminaCost1H;
+int Settings::staminaCost2H;
 
 void Settings::LoadSettings()
 {
@@ -48,7 +49,8 @@ void Settings::LoadSettings()
     holdConsecutivePA = std::stoi(ini.GetValue("Settings", "bConsecutivePowerAttacks", "0"));
     holdConsecutiveLA = std::stoi(ini.GetValue("Settings", "bConsecutiveLightAttacks", "0"));
     requireStaminaPA = std::stoi(ini.GetValue("Settings", "bPowerAttacksRequireStamina", "0"));
-    amountStaminaPA = std::stoi(ini.GetValue("Settings", "iPowerAttacksAmountStamina", "-1"));
+    staminaCost1H = std::stoi(ini.GetValue("Settings", "iStaminaCost1H", "-1"));
+    staminaCost2H = std::stoi(ini.GetValue("Settings", "iStaminaCost2H", "-1"));
 
     (void)ini.SaveFile(path);
 }

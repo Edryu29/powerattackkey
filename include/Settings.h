@@ -21,7 +21,8 @@ namespace Settings
     extern bool holdConsecutivePA;
     extern bool holdConsecutiveLA;
     extern bool requireStaminaPA;
-    extern int amountStaminaPA;
+    extern int staminaCost1H;
+    extern int staminaCost2H;
 
     void LoadSettings();
 }
