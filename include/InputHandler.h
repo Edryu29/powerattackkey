@@ -29,7 +29,10 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
         bool comboActiveAlt1 = false;
         bool comboActiveAlt2 = false;
 
-        float vanillaPADelay = 0.3000000119f;
-        float RightHandLAHeldTime = 0.0f;
-        bool RightHandLAWait = false;
+        float lightAttackHeldTime = 0.0f;
+        bool lightAttackWaiting = false;
+
+        float powerAttackHeldTime = 0.0f;
+        bool powerAttackWaiting = false;
+        
 };

@@ -1,6 +1,7 @@
 #include <InputHandler.h>
 #include <Settings.h>
 
+// Registering events to load default attack keys from loadscreens and journal
 class MenuWatcher final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
 {
 public:

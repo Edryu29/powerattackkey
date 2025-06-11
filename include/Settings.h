@@ -17,9 +17,9 @@ namespace Settings
     extern int bothHandsKeyAlt2;
     extern int comboKeyAlt2;
 
-    extern bool waitPowerAttack;
     extern bool holdConsecutivePA;
     extern bool holdConsecutiveLA;
+    extern float consecutiveAttacksDelay;
     extern bool requireStaminaPA;
     extern int staminaCost1H;
     extern int staminaCost2H;

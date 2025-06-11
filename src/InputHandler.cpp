@@ -53,56 +53,64 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             if (btn_event->IsUp()) comboActiveAlt2 = false;
                         }
 
+                        const auto playerState = player->AsActorState();
+                        if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
+                            playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal ||
+                            playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
+                            playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
+                            playerState->GetFlyState() == RE::FLY_STATE::kNone)){
+                            // logger::info("Player cannot attack currently, ignoring input");
+                            return RE::BSEventNotifyControl::kContinue;
+                        }
 
                         if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
                             if (btn_event->IsUp()){
-                                RightHandLAWait = false;
-                                RightHandLAHeldTime = 0.0f;
+                                lightAttackWaiting = false;
+                                lightAttackHeldTime = 0.0f;
                             }
                             bool bIsBlocking = false;
                             player->GetGraphVariableBool("Isblocking", bIsBlocking);
                             if (btn_event->IsHeld() && HasEquipedWeapon(player, false) && !bIsBlocking) {
-                                float currentHeldDownTime = btn_event->heldDownSecs;
-                                if (!RightHandLAWait) {
-                                    RightHandLAHeldTime = currentHeldDownTime;
+                                float currentLAHeldTime = btn_event->heldDownSecs;
+                                if (!lightAttackWaiting) {
+                                    lightAttackHeldTime = currentLAHeldTime;
                                 }
-                                if (currentHeldDownTime - RightHandLAHeldTime > vanillaPADelay) {
-                                    RightHandLAWait = false;
+                                if (currentLAHeldTime - lightAttackHeldTime > Settings::consecutiveAttacksDelay) {
+                                    lightAttackWaiting = false;
                                     PerformAction(LARightHandAction, player);
                                 } else {
-                                    RightHandLAWait = true;
+                                    lightAttackWaiting = true;
                                 }
                             }
                             return RE::BSEventNotifyControl::kContinue;
                         } 
-
-
-                        if (!(btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
-                            return RE::BSEventNotifyControl::kContinue;
-                        }
-
                         
                         if (   keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
                             || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
                             || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2) {
 
-                            bool bAllowRotation = false;
-                            if (Settings::waitPowerAttack) {
-                                player->GetGraphVariableBool("bAllowRotation", bAllowRotation);
-                                if (bAllowRotation) {
-                                    // logger::info("Player is powerattacking");
-                                    return RE::BSEventNotifyControl::kContinue;
-                                }
+
+                            if (btn_event->IsUp()){
+                                powerAttackWaiting = false;
+                                powerAttackHeldTime = 0.0f;
                             }
 
-                            const auto playerState = player->AsActorState();
-                            if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
-                                playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal ||
-                                playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
-                                playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
-                                playerState->GetFlyState() == RE::FLY_STATE::kNone)){
-                                // logger::info("Player cannot attack currently, ignoring input");
+                            if (!(btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
                                 return RE::BSEventNotifyControl::kContinue;
+                            }
+
+                            if (btn_event->IsHeld() && Settings::holdConsecutivePA) {
+                                float currentPAHeldTime = btn_event->heldDownSecs;
+                                if (!powerAttackWaiting) {
+                                    powerAttackHeldTime = currentPAHeldTime;
+                                }
+                                // logger::info("Difference: {}",currentPAHeldTime - powerAttackHeldTime);
+                                if (currentPAHeldTime - powerAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                    powerAttackWaiting = true;
+                                    return RE::BSEventNotifyControl::kContinue;
+                                } else {
+                                    powerAttackWaiting = false;
+                                }
                             }
 
                             if (keycode == Settings::rightHandKey && (Settings::comboKey<=0 || comboActive) && HasEquipedWeapon(player, false)) {
