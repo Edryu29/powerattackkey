@@ -21,9 +21,9 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
         RE::BGSAction* PABothHandsAction = RE::TESForm::LookupByID(0x2E2F7)->As<RE::BGSAction>();
         RE::BGSAction* LARightHandAction = RE::TESForm::LookupByID(0x13005)->As<RE::BGSAction>();
 
-        std::uint32_t rightHandKeyKeyboard = 255;
-        std::uint32_t rightHandKeyMouse = 255;
-        std::uint32_t rightHandKeyGamepad = 255;
+        std::uint32_t rightAttackKeyKeyboard = 255;
+        std::uint32_t rightAttackKeyMouse = 255;
+        std::uint32_t rightAttackKeyGamepad = 255;
 
         bool comboActive = false;
         bool comboActiveAlt1 = false;

@@ -17,6 +17,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
 
     if (const auto ui{ RE::UI::GetSingleton() }) {
 
+        // Check if any menu is open
         if (ui->GameIsPaused() || ui->IsApplicationMenuOpen() || ui->IsItemMenuOpen() || ui->IsModalMenuOpen()) {
             return RE::BSEventNotifyControl::kContinue;
         }
@@ -40,6 +41,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         // logger::info("Key Pressed: {}", keycode);
 
 
+                        // Update state of combo keys
                         if (Settings::comboKey>0 && keycode == Settings::comboKey) {
                             if (btn_event->IsHeld()) comboActive = true;
                             if (btn_event->IsUp()) comboActive = false;
@@ -53,6 +55,8 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             if (btn_event->IsUp()) comboActiveAlt2 = false;
                         }
 
+
+                        // Check if player can do attacks
                         const auto playerState = player->AsActorState();
                         if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
                             playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal ||
@@ -63,7 +67,10 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             return RE::BSEventNotifyControl::kContinue;
                         }
 
+
+                        // Logic related to holding attack key with consecutive light attacks enabled
                         if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
+                            // Reset variables when attack key is up
                             if (btn_event->IsUp()){
                                 lightAttackWaiting = false;
                                 lightAttackHeldTime = 0.0f;
@@ -71,6 +78,8 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             bool bIsBlocking = false;
                             player->GetGraphVariableBool("Isblocking", bIsBlocking);
                             if (btn_event->IsHeld() && HasEquipedWeapon(player, false) && !bIsBlocking) {
+                                // Check difference in time since the last time we entered here
+                                // I apply a wait time between triggers based on setting
                                 float currentLAHeldTime = btn_event->heldDownSecs;
                                 if (!lightAttackWaiting) {
                                     lightAttackHeldTime = currentLAHeldTime;
@@ -85,11 +94,12 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             return RE::BSEventNotifyControl::kContinue;
                         } 
                         
+                        // Check if a power attack key is being pressed
                         if (   keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
                             || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
                             || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2) {
 
-
+                            // Reset variables when any power attack key is up. 
                             if (btn_event->IsUp()){
                                 powerAttackWaiting = false;
                                 powerAttackHeldTime = 0.0f;
@@ -99,6 +109,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                 return RE::BSEventNotifyControl::kContinue;
                             }
 
+                            // If the power attack is being held, we repeat the same logic for consecutive light attacks
                             if (btn_event->IsHeld() && Settings::holdConsecutivePA) {
                                 float currentPAHeldTime = btn_event->heldDownSecs;
                                 if (!powerAttackWaiting) {
@@ -113,6 +124,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                 }
                             }
 
+                            // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
                             if (keycode == Settings::rightHandKey && (Settings::comboKey<=0 || comboActive) && HasEquipedWeapon(player, false)) {
                                 if (HasEnoughStamina(player, true, false) && Settings::requireStaminaPA) {
                                     // logger::info("Right Hand Key Pressed");
@@ -186,10 +198,10 @@ void InputEventHandler::GetAttackKeys(){
     auto* controlMap = RE::ControlMap::GetSingleton();
     const auto* userEvents = RE::UserEvents::GetSingleton();
 
-    rightHandKeyKeyboard = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kKeyboard);
-    rightHandKeyMouse = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kMouse);
-    rightHandKeyGamepad = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kGamepad);
-
+    rightAttackKeyKeyboard = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kKeyboard);
+    rightAttackKeyMouse = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kMouse);
+    rightAttackKeyGamepad = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kGamepad);
+    rightAttackKeyGamepad = SKSE::InputMap::GamepadMaskToKeycode(rightAttackKeyGamepad);
 }
 
 bool InputEventHandler::HasEquipedWeapon(const RE::Actor* player, bool leftHand) {
@@ -204,6 +216,7 @@ bool InputEventHandler::HasEquippedTwoHandedWeapon(const RE::PlayerCharacter* pl
     return rightWeapon && (rightWeapon->IsTwoHandedAxe() || rightWeapon->IsTwoHandedSword());
 }
 
+ // The flashing doesn't work properly with left hands power attacks
 bool InputEventHandler::HasEnoughStamina(RE::PlayerCharacter* player, bool rightHand, bool leftHand) {
     int staminaCost = Settings::staminaCost1H;
     if (rightHand && leftHand) staminaCost = Settings::staminaCost1H*2;
@@ -221,11 +234,11 @@ void InputEventHandler::FlashHUDMeter(RE::ActorValue a_av) {
 bool InputEventHandler::IsRightHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const {
     switch (device) {
         case RE::INPUT_DEVICE::kKeyboard:
-            return key == rightHandKeyKeyboard;
+            return key == rightAttackKeyKeyboard;
         case RE::INPUT_DEVICE::kMouse:
-            return key == rightHandKeyMouse;
+            return key == rightAttackKeyMouse;
         case RE::INPUT_DEVICE::kGamepad:
-            return key == rightHandKeyGamepad;
+            return key == rightAttackKeyGamepad;
         default:
             return false;
     }

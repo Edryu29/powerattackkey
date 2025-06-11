@@ -18,6 +18,7 @@ int Settings::comboKeyAlt2;
 bool Settings::holdConsecutivePA;
 bool Settings::holdConsecutiveLA;
 float Settings::consecutiveAttacksDelay;
+
 bool Settings::requireStaminaPA;
 int Settings::staminaCost1H;
 int Settings::staminaCost2H;
@@ -48,6 +49,7 @@ void Settings::LoadSettings()
     holdConsecutivePA = std::stoi(ini.GetValue("Settings", "bConsecutivePowerAttacks", "0"));
     holdConsecutiveLA = std::stoi(ini.GetValue("Settings", "bConsecutiveLightAttacks", "0"));
     consecutiveAttacksDelay = std::stoi(ini.GetValue("Settings", "fConsecutiveAttacksDelay", "0.5"));
+
     requireStaminaPA = std::stoi(ini.GetValue("Settings", "bPowerAttacksRequireStamina", "0"));
     staminaCost1H = std::stoi(ini.GetValue("Settings", "iStaminaCost1H", "15"));
     staminaCost2H = std::stoi(ini.GetValue("Settings", "iStaminaCost2H", "30"));
