@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.30)
 # Set your project name. This will be the name of your SKSE .dll file.
 project(
   PowerAttackKey
-  VERSION 1.3.0
+  VERSION 2.0.0
   LANGUAGES CXX
 )
 

@@ -39,70 +39,52 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         }
                         // logger::info("Key Pressed: {}", keycode);
 
+
                         if (Settings::comboKey>0 && keycode == Settings::comboKey) {
                             if (btn_event->IsHeld()) comboActive = true;
                             if (btn_event->IsUp()) comboActive = false;
-                            // logger::info("Combo Key Pressed");
+                        }
+                        if (Settings::comboKeyAlt1>0 && keycode == Settings::comboKeyAlt1) {
+                            if (btn_event->IsHeld()) comboActiveAlt1 = true;
+                            if (btn_event->IsUp()) comboActiveAlt1 = false;
+                        }
+                        if (Settings::comboKeyAlt2>0 && keycode == Settings::comboKeyAlt2) {
+                            if (btn_event->IsHeld()) comboActiveAlt2 = true;
+                            if (btn_event->IsUp()) comboActiveAlt2 = false;
                         }
 
-                        if (Settings::comboKeyAlt>0 && keycode == Settings::comboKeyAlt) {
-                            if (btn_event->IsHeld()) comboActiveAlt = true;
-                            if (btn_event->IsUp()) comboActiveAlt = false;
-                            // logger::info("Combo Key Alt Pressed");
-                        }
 
-                        if (Settings::holdContinuousLA) {
-                            if (IsRightHandKey(device, keycode)) {
-                                
-                                if (btn_event->IsUp()){
-                                    RightHandLAWait = false;
-                                    RightHandLAHeldTime = 0.0f;
-                                }
-
-                                if (btn_event->IsHeld()) {
-                                    float currentHeldDownTime = btn_event->heldDownSecs;
-                                    if (!RightHandLAWait) {
-                                        RightHandLAHeldTime = currentHeldDownTime;
-                                    }
-                                    if (currentHeldDownTime - RightHandLAHeldTime > vanillaPADelay) {
-                                        RightHandLAWait = false;
-                                        PerformAction(LARightHandAction, player);
-                                    } else {
-                                        RightHandLAWait = true;
-                                    }
-                                }
-                                return RE::BSEventNotifyControl::kContinue;
-                            } else if (IsRightHandKey(device, keycode)) {
-                                
-                                if (btn_event->IsUp()){
-                                    RightHandLAWait = false;
-                                    RightHandLAHeldTime = 0.0f;
-                                }
-
-                                if (btn_event->IsHeld()) {
-                                    float currentHeldDownTime = btn_event->heldDownSecs;
-                                    if (!RightHandLAWait) {
-                                        RightHandLAHeldTime = currentHeldDownTime;
-                                    }
-                                    if (currentHeldDownTime - RightHandLAHeldTime > vanillaPADelay) {
-                                        RightHandLAWait = false;
-                                        PerformAction(LARightHandAction, player);
-                                    } else {
-                                        RightHandLAWait = true;
-                                    }
-                                }
-                                return RE::BSEventNotifyControl::kContinue;
+                        if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
+                            if (btn_event->IsUp()){
+                                RightHandLAWait = false;
+                                RightHandLAHeldTime = 0.0f;
                             }
-                        }
+                            if (btn_event->IsHeld()){
+                                float currentHeldDownTime = btn_event->heldDownSecs;
+                                if (!RightHandLAWait) {
+                                    RightHandLAHeldTime = currentHeldDownTime;
+                                }
+                                if (currentHeldDownTime - RightHandLAHeldTime > vanillaPADelay) {
+                                    RightHandLAWait = false;
+                                    PerformAction(LARightHandAction, player);
+                                } else {
+                                    RightHandLAWait = true;
+                                }
+                            }
+                            return RE::BSEventNotifyControl::kContinue;
+                        } 
 
-                        if (!(btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdContinuousPA))) {
+                        if (!(btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
                             return RE::BSEventNotifyControl::kContinue;
                         }
 
-                        if (keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey) {
+                        if (   keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
+                            || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
+                            || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2) {
                             bool bAllowRotation = false;
                             if (Settings::waitPowerAttack) {
                                 player->GetGraphVariableBool("bAllowRotation", bAllowRotation);
+
                                 if (bAllowRotation) {
                                     // logger::info("Player is powerattacking");
                                     return RE::BSEventNotifyControl::kContinue;
@@ -128,14 +110,23 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             } else if (keycode == Settings::bothHandsKey && (Settings::comboKey<=0 || comboActive)) {
                                 // logger::info("Both Hands Key Pressed");
                                 PerformAction(PABothHandsAction, player);
-                            } else if (keycode == Settings::rightHandKeyAlt && (Settings::comboKeyAlt<=0 || comboActiveAlt)) {
-                                // logger::info("Right Hand Key Alt Pressed");
+                            } else if (keycode == Settings::rightHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1)) {
+                                // logger::info("Right Hand Key Alt1 Pressed");
                                 PerformAction(PARightHandAction, player);
-                            } else if (keycode == Settings::leftHandKeyAlt && (Settings::comboKeyAlt<=0 || comboActiveAlt)) {
-                                // logger::info("Left Hand Key Alt Pressed");
+                            } else if (keycode == Settings::leftHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1)) {
+                                // logger::info("Left Hand Key Alt1 Pressed");
                                 PerformAction(PALeftHandAction, player);
-                            } else if (keycode == Settings::bothHandsKeyAlt && (Settings::comboKeyAlt<=0 || comboActiveAlt)) {
-                                // logger::info("Both Hands Key Alt Pressed");
+                            } else if (keycode == Settings::bothHandsKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1)) {
+                                // logger::info("Both Hands Key Alt1 Pressed");
+                                PerformAction(PABothHandsAction, player);
+                            } else if (keycode == Settings::rightHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2)) {
+                                // logger::info("Right Hand Key Alt2 Pressed");
+                                PerformAction(PARightHandAction, player);
+                            } else if (keycode == Settings::leftHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2)) {
+                                // logger::info("Left Hand Key Alt2 Pressed");
+                                PerformAction(PALeftHandAction, player);
+                            } else if (keycode == Settings::bothHandsKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2)) {
+                                // logger::info("Both Hands Key Alt2 Pressed");
                                 PerformAction(PABothHandsAction, player);
                             }
                         }
@@ -167,11 +158,6 @@ void InputEventHandler::GetAttackKeys(){
     rightHandKeyMouse = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kMouse);
     rightHandKeyGamepad = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kGamepad);
 
-    leftHandKeyKeyboard = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kKeyboard);
-    leftHandKeyMouse = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kMouse);
-    leftHandKeyGamepad = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kGamepad);
-
-    // logger::info("Mapping Complete");
 }
 
 bool InputEventHandler::IsRightHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const {
@@ -182,18 +168,6 @@ bool InputEventHandler::IsRightHandKey(const RE::INPUT_DEVICE device, const std:
             return key == rightHandKeyMouse;
         case RE::INPUT_DEVICE::kGamepad:
             return key == rightHandKeyGamepad;
-        default:
-            return false;
-    }
-}
-bool InputEventHandler::IsLeftHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const {
-    switch (device) {
-        case RE::INPUT_DEVICE::kKeyboard:
-            return key == leftHandKeyKeyboard;
-        case RE::INPUT_DEVICE::kMouse:
-            return key == leftHandKeyMouse;
-        case RE::INPUT_DEVICE::kGamepad:
-            return key == leftHandKeyGamepad;
         default:
             return false;
     }

@@ -7,14 +7,19 @@ namespace Settings
     extern int bothHandsKey;
     extern int comboKey;
     
-    extern int rightHandKeyAlt;
-    extern int leftHandKeyAlt;
-    extern int bothHandsKeyAlt;
-    extern int comboKeyAlt;
+    extern int rightHandKeyAlt1;
+    extern int leftHandKeyAlt1;
+    extern int bothHandsKeyAlt1;
+    extern int comboKeyAlt1;
+
+    extern int rightHandKeyAlt2;
+    extern int leftHandKeyAlt2;
+    extern int bothHandsKeyAlt2;
+    extern int comboKeyAlt2;
 
     extern bool waitPowerAttack;
-    extern bool holdContinuousPA;
-    extern bool holdContinuousLA;
+    extern bool holdConsecutivePA;
+    extern bool holdConsecutiveLA;
     extern bool requireStaminaPA;
     extern int amountStaminaPA;
 

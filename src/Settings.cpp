@@ -5,14 +5,19 @@ int Settings::leftHandKey;
 int Settings::bothHandsKey;
 int Settings::comboKey;
 
-int Settings::rightHandKeyAlt;
-int Settings::leftHandKeyAlt;
-int Settings::bothHandsKeyAlt;
-int Settings::comboKeyAlt;
+int Settings::rightHandKeyAlt1;
+int Settings::leftHandKeyAlt1;
+int Settings::bothHandsKeyAlt1;
+int Settings::comboKeyAlt1;
+
+int Settings::rightHandKeyAlt2;
+int Settings::leftHandKeyAlt2;
+int Settings::bothHandsKeyAlt2;
+int Settings::comboKeyAlt2;
 
 bool Settings::waitPowerAttack;
-bool Settings::holdContinuousPA;
-bool Settings::holdContinuousLA;
+bool Settings::holdConsecutivePA;
+bool Settings::holdConsecutiveLA;
 bool Settings::requireStaminaPA;
 int Settings::amountStaminaPA;
 
@@ -24,21 +29,26 @@ void Settings::LoadSettings()
     ini.SetUnicode();
     ini.LoadFile(path);
 
-    rightHandKey = std::stoi(ini.GetValue("Settings", "Right Hand", "45"));
-    leftHandKey = std::stoi(ini.GetValue("Settings", "Left Hand", "-1"));
-    bothHandsKey = std::stoi(ini.GetValue("Settings", "Dual Wield", "-1"));
-    comboKey = std::stoi(ini.GetValue("Settings", "Combo Key", "-1"));
+    rightHandKey = std::stoi(ini.GetValue("Settings", "iRightHandKey", "45"));
+    leftHandKey = std::stoi(ini.GetValue("Settings", "iLeftHandKey", "-1"));
+    bothHandsKey = std::stoi(ini.GetValue("Settings", "iDualWieldKey", "-1"));
+    comboKey = std::stoi(ini.GetValue("Settings", "iComboKey", "-1"));
 
-    rightHandKeyAlt = std::stoi(ini.GetValue("Settings", "Right Hand Alt", "281"));
-    leftHandKeyAlt = std::stoi(ini.GetValue("Settings", "Left Hand Alt", "-1"));
-    bothHandsKeyAlt = std::stoi(ini.GetValue("Settings", "Dual Wield Alt", "-1"));
-    comboKeyAlt = std::stoi(ini.GetValue("Settings", "Combo Key Alt", "-1"));
+    rightHandKeyAlt1 = std::stoi(ini.GetValue("Settings", "iRightHandKeyAlt1", "281"));
+    leftHandKeyAlt1 = std::stoi(ini.GetValue("Settings", "iLeftHandKeyAlt1", "-1"));
+    bothHandsKeyAlt1 = std::stoi(ini.GetValue("Settings", "iDualWieldKeyAlt1", "-1"));
+    comboKeyAlt1 = std::stoi(ini.GetValue("Settings", "iComboKeyAlt1", "-1"));
 
-    waitPowerAttack = std::stoi(ini.GetValue("Settings", "Wait Power Attack", "1"));
-    holdContinuousPA = std::stoi(ini.GetValue("Settings", "Hold Continuous Power Attack", "0"));
-    holdContinuousLA = std::stoi(ini.GetValue("Settings", "Hold Continuous Light Attacks", "0"));
-    requireStaminaPA = std::stoi(ini.GetValue("Settings", "Power Attack Require Stamina", "0"));
-    amountStaminaPA = std::stoi(ini.GetValue("Settings", "Power Attack Amount Stamina", "-1"));
+    rightHandKeyAlt2 = std::stoi(ini.GetValue("Settings", "iRightHandKeyAlt2", "-1"));
+    leftHandKeyAlt2 = std::stoi(ini.GetValue("Settings", "iLeftHandKeyAlt2", "-1"));
+    bothHandsKeyAlt2 = std::stoi(ini.GetValue("Settings", "iDualWieldKeyAlt2", "-1"));
+    comboKeyAlt2 = std::stoi(ini.GetValue("Settings", "iComboKeyAlt2", "-1"));
+
+    waitPowerAttack = std::stoi(ini.GetValue("Settings", "bWaitEndPowerAttack", "1"));
+    holdConsecutivePA = std::stoi(ini.GetValue("Settings", "bConsecutivePowerAttacks", "0"));
+    holdConsecutiveLA = std::stoi(ini.GetValue("Settings", "bConsecutiveLightAttacks", "0"));
+    requireStaminaPA = std::stoi(ini.GetValue("Settings", "bPowerAttacksRequireStamina", "0"));
+    amountStaminaPA = std::stoi(ini.GetValue("Settings", "iPowerAttacksAmountStamina", "-1"));
 
     (void)ini.SaveFile(path);
 }

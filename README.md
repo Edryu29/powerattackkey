@@ -19,5 +19,5 @@ You can trigger power attacks only when this key is being held.
 New power attacks cannot be triggered until previous is done. Set to 0 or 1.
 > Wait Power Attack = 1  
 
-Continuous power attacks while the key is being held. Default is 0.
-> Hold Continuous Power Attack = 0
+Consecutive power attacks while the key is being held. Default is 0.
+> Consecutive Power Attack = 0
