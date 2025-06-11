@@ -1,9 +1,35 @@
 #include <InputHandler.h>
 #include <Settings.h>
 
+class MenuWatcher final : public RE::BSTEventSink<RE::MenuOpenCloseEvent>
+{
+public:
+    RE::BSEventNotifyControl ProcessEvent(
+        const RE::MenuOpenCloseEvent* a_event,
+        RE::BSTEventSource<RE::MenuOpenCloseEvent>*) override
+    {
+        if (!a_event || a_event->menuName.empty())
+            return RE::BSEventNotifyControl::kContinue;
+
+        if (a_event->menuName == RE::InterfaceStrings::GetSingleton()->loadingMenu && !a_event->opening) {
+            InputEventHandler::GetSingleton()->GetAttackKeys();
+        }else if(a_event->menuName == RE::InterfaceStrings::GetSingleton()->journalMenu && !a_event->opening) {
+            InputEventHandler::GetSingleton()->GetAttackKeys();
+        }
+
+        return RE::BSEventNotifyControl::kContinue;
+    }
+};
+
+static MenuWatcher g_menuWatcher;
+
+
 void MessageHandler(SKSE::MessagingInterface::Message* message) {
     if (message->type == SKSE::MessagingInterface::kDataLoaded){
         RE::BSInputDeviceManager::GetSingleton()->AddEventSink(InputEventHandler::GetSingleton());
+    }
+    if (auto ui = RE::UI::GetSingleton()) {
+        ui->AddEventSink(&g_menuWatcher);
     }
 }
 
