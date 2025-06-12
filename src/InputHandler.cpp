@@ -126,49 +126,49 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
 
                             // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
                             if (keycode == Settings::rightHandKey && (Settings::comboKey<=0 || comboActive) && HasEquipedWeapon(player, false)) {
-                                if (HasEnoughStamina(player, true, false) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, false)) {
                                     // logger::info("Right Hand Key Pressed");
                                     PerformAction(PARightHandAction, player);
                                 }
                             } else if (keycode == Settings::leftHandKey && (Settings::comboKey<=0 || comboActive) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, false, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, false, true)) {
                                     // logger::info("Left Hand Key Pressed");
                                     PerformAction(PALeftHandAction, player);
                                 }
                             } else if (keycode == Settings::bothHandsKey && (Settings::comboKey<=0 || comboActive) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, true, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, true)) {
                                     // logger::info("Both Hands Key Pressed");
                                     PerformAction(PABothHandsAction, player);
                                 }
 
                             } else if (keycode == Settings::rightHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && HasEquipedWeapon(player, false)) {
-                                if (HasEnoughStamina(player, true, false) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, false)) {
                                     // logger::info("Right Hand Key Alt1 Pressed");
                                     PerformAction(PARightHandAction, player);
                                 }
                             } else if (keycode == Settings::leftHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && HasEquipedWeapon(player, true)) {
                                 // logger::info("Left Hand Key Alt1 Pressed");
-                                if (HasEnoughStamina(player, false, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, false, true)) {
                                     PerformAction(PALeftHandAction, player);
                                 }
                             } else if (keycode == Settings::bothHandsKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, true, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, true)) {
                                     // logger::info("Both Hands Key Alt1 Pressed");
                                     PerformAction(PABothHandsAction, player);
                                 }
 
                             } else if (keycode == Settings::rightHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && HasEquipedWeapon(player, false)) {
-                                if (HasEnoughStamina(player, true, false) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, false)) {
                                     // logger::info("Right Hand Key Alt2 Pressed");
                                     PerformAction(PARightHandAction, player);
                                 }
                             } else if (keycode == Settings::leftHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && HasEquipedWeapon(player, true)) {
                                 // logger::info("Left Hand Key Alt2 Pressed");
-                                if (HasEnoughStamina(player, false, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, false, true)) {
                                     PerformAction(PALeftHandAction, player);
                                 }
                             } else if (keycode == Settings::bothHandsKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, true, true) && Settings::requireStaminaPA) {
+                                if (HasEnoughStamina(player, true, true)) {
                                     // logger::info("Both Hands Key Alt2 Pressed");
                                     PerformAction(PABothHandsAction, player);
                                 }
@@ -218,6 +218,7 @@ bool InputEventHandler::HasEquippedTwoHandedWeapon(const RE::PlayerCharacter* pl
 
  // The flashing doesn't work properly with left hands power attacks
 bool InputEventHandler::HasEnoughStamina(RE::PlayerCharacter* player, bool rightHand, bool leftHand) {
+    if (!Settings::requireStaminaPA) return true;
     int staminaCost = Settings::staminaCost1H;
     if (rightHand && leftHand) staminaCost = Settings::staminaCost1H*2;
     else if (rightHand && !leftHand && HasEquippedTwoHandedWeapon(player)) staminaCost = Settings::staminaCost2H;
