@@ -11,7 +11,8 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
         bool IsRightHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const;
 
         static void PerformAction(RE::BGSAction* action, RE::Actor* a);
-        static bool HasEquipedWeapon(const RE::Actor* player, bool leftHand);
+        static bool HasEquipedWeapon(const RE::PlayerCharacter* player, bool leftHand);
+        static bool IsHandUnarmed(const RE::PlayerCharacter* player, bool leftHand);
         static bool HasEquippedTwoHandedWeapon(const RE::PlayerCharacter* player);
         static bool HasEnoughStamina(RE::PlayerCharacter* player, bool rightHand, bool leftHand);
         static void FlashHUDMeter(RE::ActorValue a_av);

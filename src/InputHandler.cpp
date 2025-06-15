@@ -122,55 +122,39 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                     powerAttackWaiting = false;
                                 }
                             }
+
+                            bool isRightHandEquiped = HasEquipedWeapon(player, false);
+                            bool isRightHandUnarmed = IsHandUnarmed(player, false);
+                            bool isLeftHandEquiped = HasEquipedWeapon(player, true);
+                            bool isLeftHandUnarmed = IsHandUnarmed(player, true);
+
+                            bool isUsingCombo = (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2);
+                            bool isUsingComboAlt1 = (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2);
+                            bool isUsingComboAlt2 = (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1);
+
                             // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
-                            if (keycode == Settings::rightHandKey && (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2) && HasEquipedWeapon(player, false)) {
+                            if (isRightHandEquiped && 
+                               ((keycode == Settings::rightHandKey && isUsingCombo) || 
+                                (keycode == Settings::rightHandKeyAlt1 && isUsingComboAlt1) || 
+                                (keycode == Settings::rightHandKeyAlt2 && isUsingComboAlt2) )){
                                 if (HasEnoughStamina(player, true, false)) {
-                                    // logger::info("Right Hand Key Pressed");
+                                    if (isRightHandUnarmed) PerformAction(LARightHandAction, player);
                                     PerformAction(PARightHandAction, player);
-                                }
-                            } else if (keycode == Settings::leftHandKey && (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, false, true)) {
-                                    // logger::info("Left Hand Key Pressed");
-                                    PerformAction(LALeftHandAction, player);
-                                    PerformAction(PALeftHandAction, player);
-                                }
-                            } else if (keycode == Settings::bothHandsKey && (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, true, true)) {
-                                    // logger::info("Both Hands Key Pressed");
-                                    PerformAction(PABothHandsAction, player);
                                 }
 
-                            } else if (keycode == Settings::rightHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2) && HasEquipedWeapon(player, false)) {
-                                if (HasEnoughStamina(player, true, false)) {
-                                    // logger::info("Right Hand Key Alt1 Pressed");
-                                    PerformAction(PARightHandAction, player);
-                                }
-                            } else if (keycode == Settings::leftHandKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2) && HasEquipedWeapon(player, true)) {
-                                // logger::info("Left Hand Key Alt1 Pressed");
+                            } else if (isLeftHandEquiped && (!isLeftHandUnarmed || (isLeftHandUnarmed && isRightHandUnarmed)) &&
+                               ((keycode == Settings::leftHandKey && isUsingCombo) || 
+                                (keycode == Settings::leftHandKeyAlt1 && isUsingComboAlt1) || 
+                                (keycode == Settings::leftHandKeyAlt2 && isUsingComboAlt2) )){
                                 if (HasEnoughStamina(player, false, true)) {
                                     PerformAction(LALeftHandAction, player);
                                     PerformAction(PALeftHandAction, player);
-                                }
-                            } else if (keycode == Settings::bothHandsKeyAlt1 && (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
-                                if (HasEnoughStamina(player, true, true)) {
-                                    // logger::info("Both Hands Key Alt1 Pressed");
-                                    PerformAction(PABothHandsAction, player);
                                 }
 
-                            } else if (keycode == Settings::rightHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1) && HasEquipedWeapon(player, false)) {
-                                if (HasEnoughStamina(player, true, false)) {
-                                    // logger::info("Right Hand Key Alt2 Pressed");
-                                    PerformAction(PARightHandAction, player);
-                                }
-                            } else if (keycode == Settings::leftHandKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1) && HasEquipedWeapon(player, true)) {
-                                // logger::info("Left Hand Key Alt2 Pressed");
-                                if (HasEnoughStamina(player, false, true)) {
-                                    PerformAction(LALeftHandAction, player);
-                                    PerformAction(PALeftHandAction, player);
-                                }
-                            } else if (keycode == Settings::bothHandsKeyAlt2 && (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1) && HasEquipedWeapon(player, false) && HasEquipedWeapon(player, true)) {
+                            } else if (((keycode == Settings::bothHandsKey && isUsingCombo) || 
+                                        (keycode == Settings::bothHandsKeyAlt1 && isUsingComboAlt1) || 
+                                        (keycode == Settings::bothHandsKeyAlt2 && isUsingComboAlt2) )){
                                 if (HasEnoughStamina(player, true, true)) {
-                                    // logger::info("Both Hands Key Alt2 Pressed");
                                     PerformAction(PABothHandsAction, player);
                                 }
                             }
@@ -205,9 +189,16 @@ void InputEventHandler::GetAttackKeys(){
     rightAttackKeyGamepad = SKSE::InputMap::GamepadMaskToKeycode(rightAttackKeyGamepad);
 }
 
-bool InputEventHandler::HasEquipedWeapon(const RE::Actor* player, bool leftHand) {
+bool InputEventHandler::HasEquipedWeapon(const RE::PlayerCharacter* player, bool leftHand) {
     RE::TESObjectWEAP* akWeapon = reinterpret_cast<RE::TESObjectWEAP*>(player->GetEquippedObject(leftHand));
+    if ((leftHand && HasEquippedTwoHandedWeapon(player))) return false;
     if (!akWeapon || (!akWeapon->IsBow() && !akWeapon->IsStaff() && !akWeapon->IsCrossbow() && akWeapon->IsWeapon())) return true;
+    return false;
+}
+
+bool InputEventHandler::IsHandUnarmed(const RE::PlayerCharacter* player, bool leftHand) {
+    RE::TESObjectWEAP* akWeapon = reinterpret_cast<RE::TESObjectWEAP*>(player->GetEquippedObject(leftHand));
+    if (!akWeapon) return true;
     return false;
 }
 
