@@ -20,6 +20,7 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
         RE::BGSAction* PALeftHandAction = RE::TESForm::LookupByID(0x2E2F6)->As<RE::BGSAction>();
         RE::BGSAction* PABothHandsAction = RE::TESForm::LookupByID(0x2E2F7)->As<RE::BGSAction>();
         RE::BGSAction* LARightHandAction = RE::TESForm::LookupByID(0x13005)->As<RE::BGSAction>();
+        RE::BGSAction* LALeftHandAction = RE::TESForm::LookupByID(0x13004)->As<RE::BGSAction>();
 
         std::uint32_t rightAttackKeyKeyboard = 255;
         std::uint32_t rightAttackKeyMouse = 255;
