@@ -21,6 +21,7 @@ namespace Settings
     extern bool holdConsecutiveLA;
     extern float consecutiveAttacksDelay;
     extern bool consecutiveDualAttacks;
+    extern bool usingMCO;
     
     extern bool requireStaminaPA;
     extern int staminaCost1H;

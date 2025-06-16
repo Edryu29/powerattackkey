@@ -76,6 +76,10 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         bool isLeftHandEquiped = HasEquipedWeapon(player, true);
                         bool isLeftHandUnarmed = IsHandUnarmed(player, true);
 
+                        bool bothHandsEquiped = isRightHandEquiped && isLeftHandEquiped;
+                        bool bothHandsUnarmed = isRightHandUnarmed && isLeftHandUnarmed;
+                        bool bothHandsWeaponsEquiped = bothHandsEquiped && !(isRightHandUnarmed || isLeftHandUnarmed);
+
                         // Check if any power attack key is being pressed
                         if (isPowerAttackKey && (btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
                             // If the power attack key is held, apply a wait time between actions
@@ -96,15 +100,13 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             bool isUsingComboAlt1 = comboActiveAlt1 && !(comboActive || comboActiveAlt2);
                             bool isUsingComboAlt2 = comboActiveAlt2 && !(comboActive || comboActiveAlt1);
 
-                            logger::info("Right Equiped: {}",isRightHandEquiped);
                             // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
                             if (isRightHandEquiped && !(btn_event->IsHeld() && bIsBlocking) &&
                                ((keycode == Settings::rightHandKey && (isUsingCombo || Settings::comboKey<=0)) || 
                                 (keycode == Settings::rightHandKeyAlt1 && (isUsingComboAlt1 || Settings::comboKeyAlt1<=0)) || 
                                 (keycode == Settings::rightHandKeyAlt2 && (isUsingComboAlt2 || Settings::comboKeyAlt2<=0)) )){
                                 if (HasEnoughStamina(player, true, false)) {
-                                    if (isRightHandUnarmed) PerformAction(LARightHandAction, player);
-                                    logger::info("Right Unarmed: {}",isRightHandUnarmed);
+                                    if (isRightHandUnarmed && !Settings::usingMCO) PerformAction(LARightHandAction, player);
                                     PerformAction(PARightHandAction, player);
                                     return RE::BSEventNotifyControl::kContinue;
                                 }
@@ -114,9 +116,8 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                 (keycode == Settings::leftHandKeyAlt1 && (isUsingComboAlt1 || Settings::comboKeyAlt1<=0)) || 
                                 (keycode == Settings::leftHandKeyAlt2 && (isUsingComboAlt2 || Settings::comboKeyAlt2<=0)) )){
                                 if (HasEnoughStamina(player, false, true)) {
-                                    PerformAction(LALeftHandAction, player);
+                                    if (!(Settings::usingMCO && (bothHandsWeaponsEquiped || bothHandsUnarmed))) PerformAction(LALeftHandAction, player);
                                     PerformAction(PALeftHandAction, player);
-                                    logger::info("Left Unarmed: {}",isRightHandUnarmed);
                                     return RE::BSEventNotifyControl::kContinue;
                                 }
 
@@ -227,7 +228,7 @@ bool InputEventHandler::HasEquipedWeapon(const RE::PlayerCharacter* player, bool
 
 bool InputEventHandler::IsHandUnarmed(const RE::PlayerCharacter* player, bool leftHand) {
     RE::TESObjectWEAP* akWeapon = reinterpret_cast<RE::TESObjectWEAP*>(player->GetEquippedObject(leftHand));
-    if (!akWeapon) return true;
+    if (!akWeapon || akWeapon->IsHandToHandMelee()) return true;
     return false;
 }
 
