@@ -35,45 +35,108 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         if (device != kKeyboard && device != kGamepad && device != kMouse) {
                             return RE::BSEventNotifyControl::kContinue;
                         }
-                        if (device == kGamepad) {
+                        if (device == kMouse) {
+                            keycode = keycode + 256;
+                        }
+                        if (device == kGamepad && (keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey)) {
                             keycode = SKSE::InputMap::GamepadMaskToKeycode(keycode);
                         }
-                        // logger::info("Key Pressed: {}", keycode);
 
+                        bool isPowerAttackKey = keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
+                                               || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
+                                               || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2;
 
                         // Update state of combo keys
-                        if (Settings::comboKey>0 && keycode == Settings::comboKey) {
-                            if (btn_event->IsHeld()) comboActive = true;
-                            if (btn_event->IsUp()) comboActive = false;
+                        if (Settings::comboKey>=0 && keycode == Settings::comboKey) comboActive = btn_event->IsHeld();
+                        if (Settings::comboKeyAlt1>=0 && keycode == Settings::comboKeyAlt1) comboActiveAlt1 = btn_event->IsHeld();
+                        if (Settings::comboKeyAlt2>=0 && keycode == Settings::comboKeyAlt2) comboActiveAlt2 = btn_event->IsHeld();
+
+                        // Reset variables when keys are not pressed
+                        if (!btn_event->IsPressed() && isPowerAttackKey){
+                            powerAttackWaiting = false;
+                            powerAttackHeldTime = 0.0f;
                         }
-                        if (Settings::comboKeyAlt1>0 && keycode == Settings::comboKeyAlt1) {
-                            if (btn_event->IsHeld()) comboActiveAlt1 = true;
-                            if (btn_event->IsUp()) comboActiveAlt1 = false;
-                        }
-                        if (Settings::comboKeyAlt2>0 && keycode == Settings::comboKeyAlt2) {
-                            if (btn_event->IsHeld()) comboActiveAlt2 = true;
-                            if (btn_event->IsUp()) comboActiveAlt2 = false;
+                        if ( !btn_event->IsPressed() && IsRightHandKey(device, keycode)){
+                            lightAttackWaiting = false;
+                            lightAttackHeldTime = 0.0f;
                         }
 
-                        // Check if player can do attacks
+                        // Check if player cannot do attacks
                         const auto playerState = player->AsActorState();
                         if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
                             playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal ||
                             playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
                             playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
                             playerState->GetFlyState() == RE::FLY_STATE::kNone)){
+                            powerAttackWaiting = false;
+                            powerAttackHeldTime = 0.0f;
+                            lightAttackWaiting = false;
+                            lightAttackHeldTime = 0.0f;
                             // logger::info("Player cannot attack currently, ignoring input");
                             return RE::BSEventNotifyControl::kContinue;
                         }
+                        // Check if any power attack key is being pressed
+                        if (isPowerAttackKey) {
+                            // Skip if key is not pressed or is held without the consecutive setting enabled
+                            if (!(btn_event->IsPressed() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
+                                return RE::BSEventNotifyControl::kContinue;
+                            }
+                            // If the power attack is being held, apply a wait time between actions
+                            if (btn_event->IsHeld() && Settings::holdConsecutivePA) {
+                                float currentPAHeldTime = btn_event->heldDownSecs;
+                                if (!powerAttackWaiting) powerAttackHeldTime = currentPAHeldTime;
+                                // logger::info("Difference: {}",currentPAHeldTime - powerAttackHeldTime);
+                                // Check if wait time expired
+                                if (currentPAHeldTime - powerAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                    powerAttackWaiting = true;
+                                    return RE::BSEventNotifyControl::kContinue;
+                                } else {
+                                    powerAttackWaiting = false;
+                                }
+                            }
 
+                            bool isRightHandEquiped = HasEquipedWeapon(player, false);
+                            bool isRightHandUnarmed = IsHandUnarmed(player, false);
+                            bool isLeftHandEquiped = HasEquipedWeapon(player, true);
+                            bool isLeftHandUnarmed = IsHandUnarmed(player, true);
+
+                            bool isUsingCombo = (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2);
+                            bool isUsingComboAlt1 = (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2);
+                            bool isUsingComboAlt2 = (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1);
+                            
+                            // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
+                            if (isRightHandEquiped && 
+                               ((keycode == Settings::rightHandKey && isUsingCombo) || 
+                                (keycode == Settings::rightHandKeyAlt1 && isUsingComboAlt1) || 
+                                (keycode == Settings::rightHandKeyAlt2 && isUsingComboAlt2) )){
+                                if (HasEnoughStamina(player, true, false)) {
+                                    if (isRightHandUnarmed) PerformAction(LARightHandAction, player);
+                                    PerformAction(PARightHandAction, player);
+                                    return RE::BSEventNotifyControl::kContinue;
+                                }
+                            
+                            } else if (isLeftHandEquiped && (!isLeftHandUnarmed || (isLeftHandUnarmed && isRightHandUnarmed)) &&
+                               ((keycode == Settings::leftHandKey && isUsingCombo) || 
+                                (keycode == Settings::leftHandKeyAlt1 && isUsingComboAlt1) || 
+                                (keycode == Settings::leftHandKeyAlt2 && isUsingComboAlt2) )){
+                                if (HasEnoughStamina(player, false, true)) {
+                                    PerformAction(LALeftHandAction, player);
+                                    PerformAction(PALeftHandAction, player);
+                                    return RE::BSEventNotifyControl::kContinue;
+                                }
+
+                            } else if (((keycode == Settings::bothHandsKey && isUsingCombo) || 
+                                        (keycode == Settings::bothHandsKeyAlt1 && isUsingComboAlt1) || 
+                                        (keycode == Settings::bothHandsKeyAlt2 && isUsingComboAlt2) )){
+                                if (HasEnoughStamina(player, true, true)) {
+                                    PerformAction(PABothHandsAction, player);
+                                    return RE::BSEventNotifyControl::kContinue;
+                                }
+                            }
+                        }
 
                         // Logic related to holding attack key with consecutive light attacks enabled
                         if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
-                            // Reset variables when attack key is up
-                            if (btn_event->IsUp()){
-                                lightAttackWaiting = false;
-                                lightAttackHeldTime = 0.0f;
-                            }
                             bool bIsBlocking = false;
                             player->GetGraphVariableBool("Isblocking", bIsBlocking);
                             if (btn_event->IsHeld() && HasEquipedWeapon(player, false) && !bIsBlocking) {
@@ -91,74 +154,9 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                 }
                             }
                             return RE::BSEventNotifyControl::kContinue;
-                        } 
-                        
-                        // Check if a power attack key is being pressed
-                        if (   keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
-                            || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
-                            || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2) {
-
-                            // Reset variables when any power attack key is up. 
-                            if (btn_event->IsUp()){
-                                powerAttackWaiting = false;
-                                powerAttackHeldTime = 0.0f;
-                            }
-
-                            if (!(btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
-                                return RE::BSEventNotifyControl::kContinue;
-                            }
-
-                            // If the power attack is being held, we repeat the same logic for consecutive light attacks
-                            if (btn_event->IsHeld() && Settings::holdConsecutivePA) {
-                                float currentPAHeldTime = btn_event->heldDownSecs;
-                                if (!powerAttackWaiting) {
-                                    powerAttackHeldTime = currentPAHeldTime;
-                                }
-                                // logger::info("Difference: {}",currentPAHeldTime - powerAttackHeldTime);
-                                if (currentPAHeldTime - powerAttackHeldTime <= Settings::consecutiveAttacksDelay) {
-                                    powerAttackWaiting = true;
-                                    return RE::BSEventNotifyControl::kContinue;
-                                } else {
-                                    powerAttackWaiting = false;
-                                }
-                            }
-
-                            bool isRightHandEquiped = HasEquipedWeapon(player, false);
-                            bool isRightHandUnarmed = IsHandUnarmed(player, false);
-                            bool isLeftHandEquiped = HasEquipedWeapon(player, true);
-                            bool isLeftHandUnarmed = IsHandUnarmed(player, true);
-
-                            bool isUsingCombo = (Settings::comboKey<=0 || comboActive) && !(comboActiveAlt1 || comboActiveAlt2);
-                            bool isUsingComboAlt1 = (Settings::comboKeyAlt1<=0 || comboActiveAlt1) && !(comboActive || comboActiveAlt2);
-                            bool isUsingComboAlt2 = (Settings::comboKeyAlt2<=0 || comboActiveAlt2) && !(comboActive || comboActiveAlt1);
-
-                            // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
-                            if (isRightHandEquiped && 
-                               ((keycode == Settings::rightHandKey && isUsingCombo) || 
-                                (keycode == Settings::rightHandKeyAlt1 && isUsingComboAlt1) || 
-                                (keycode == Settings::rightHandKeyAlt2 && isUsingComboAlt2) )){
-                                if (HasEnoughStamina(player, true, false)) {
-                                    if (isRightHandUnarmed) PerformAction(LARightHandAction, player);
-                                    PerformAction(PARightHandAction, player);
-                                }
-
-                            } else if (isLeftHandEquiped && (!isLeftHandUnarmed || (isLeftHandUnarmed && isRightHandUnarmed)) &&
-                               ((keycode == Settings::leftHandKey && isUsingCombo) || 
-                                (keycode == Settings::leftHandKeyAlt1 && isUsingComboAlt1) || 
-                                (keycode == Settings::leftHandKeyAlt2 && isUsingComboAlt2) )){
-                                if (HasEnoughStamina(player, false, true)) {
-                                    PerformAction(LALeftHandAction, player);
-                                    PerformAction(PALeftHandAction, player);
-                                }
-
-                            } else if (((keycode == Settings::bothHandsKey && isUsingCombo) || 
-                                        (keycode == Settings::bothHandsKeyAlt1 && isUsingComboAlt1) || 
-                                        (keycode == Settings::bothHandsKeyAlt2 && isUsingComboAlt2) )){
-                                if (HasEnoughStamina(player, true, true)) {
-                                    PerformAction(PABothHandsAction, player);
-                                }
-                            }
                         }
+
+
                     }
                 }
             }
@@ -229,7 +227,7 @@ bool InputEventHandler::IsRightHandKey(const RE::INPUT_DEVICE device, const std:
         case RE::INPUT_DEVICE::kKeyboard:
             return key == rightAttackKeyKeyboard;
         case RE::INPUT_DEVICE::kMouse:
-            return key == rightAttackKeyMouse;
+            return key-256 == rightAttackKeyMouse;
         case RE::INPUT_DEVICE::kGamepad:
             return key == rightAttackKeyGamepad;
         default:
