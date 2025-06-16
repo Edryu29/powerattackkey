@@ -55,26 +55,36 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         if (Settings::comboKeyAlt1>0 && keycode == Settings::comboKeyAlt1) comboActiveAlt1 = btn_event->IsPressed();
                         if (Settings::comboKeyAlt2>0 && keycode == Settings::comboKeyAlt2) comboActiveAlt2 = btn_event->IsPressed();
 
+                        if (IsRightHandKey(device, keycode)) rightHandKeyPressed = btn_event->IsPressed();
+                        if (IsLeftHandKey(device, keycode)) leftHandKeyPressed = btn_event->IsPressed();
+
                         // Reset variables when keys are is first pressed or up
                         if ((btn_event->IsDown() || btn_event->IsUp()) && isPowerAttackKey){
                             powerAttackWaiting = false;
                             powerAttackHeldTime = 0.0f;
                         }
                         if ((btn_event->IsDown() || btn_event->IsUp()) && IsRightHandKey(device, keycode)){
-                            lightAttackWaiting = false;
-                            lightAttackHeldTime = 0.0f;
+                            rightAttackWaiting = false;
+                            rightAttackHeldTime = 0.0f;
                         }
+                            
+                        bool bIsBlocking = false;
+                        player->GetGraphVariableBool("Isblocking", bIsBlocking);
+
+                        bool isRightHandEquiped = HasEquipedWeapon(player, false);
+                        bool isRightHandUnarmed = IsHandUnarmed(player, false);
+                        bool isLeftHandEquiped = HasEquipedWeapon(player, true);
+                        bool isLeftHandUnarmed = IsHandUnarmed(player, true);
 
                         // Check if any power attack key is being pressed
                         if (isPowerAttackKey && (btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
-
                             // If the power attack key is held, apply a wait time between actions
                             if (btn_event->IsHeld() && Settings::holdConsecutivePA) {
-                                float currentPAHeldTime = btn_event->heldDownSecs;
-                                if (!powerAttackWaiting) powerAttackHeldTime = currentPAHeldTime;
-                                // logger::info("Difference: {}",currentPAHeldTime - powerAttackHeldTime);
+                                float currentPowerAttackHeldTime = btn_event->heldDownSecs;
+                                if (!powerAttackWaiting) powerAttackHeldTime = currentPowerAttackHeldTime;
+                                // logger::info("Difference: {}",currentPowerAttackHeldTime - powerAttackHeldTime);
                                 // Check if wait time expired
-                                if (currentPAHeldTime - powerAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                if (currentPowerAttackHeldTime - powerAttackHeldTime <= Settings::consecutiveAttacksDelay) {
                                     powerAttackWaiting = true;
                                     return RE::BSEventNotifyControl::kContinue;
                                 } else {
@@ -82,37 +92,36 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                 }
                             }
 
-                            bool isRightHandEquiped = HasEquipedWeapon(player, false);
-                            bool isRightHandUnarmed = IsHandUnarmed(player, false);
-                            bool isLeftHandEquiped = HasEquipedWeapon(player, true);
-                            bool isLeftHandUnarmed = IsHandUnarmed(player, true);
-
                             bool isUsingCombo = comboActive && !(comboActiveAlt1 || comboActiveAlt2);
                             bool isUsingComboAlt1 = comboActiveAlt1 && !(comboActive || comboActiveAlt2);
                             bool isUsingComboAlt2 = comboActiveAlt2 && !(comboActive || comboActiveAlt1);
-                            
+
+                            logger::info("Right Equiped: {}",isRightHandEquiped);
                             // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
-                            if (isRightHandEquiped && 
+                            if (isRightHandEquiped && !(btn_event->IsHeld() && bIsBlocking) &&
                                ((keycode == Settings::rightHandKey && (isUsingCombo || Settings::comboKey<=0)) || 
                                 (keycode == Settings::rightHandKeyAlt1 && (isUsingComboAlt1 || Settings::comboKeyAlt1<=0)) || 
                                 (keycode == Settings::rightHandKeyAlt2 && (isUsingComboAlt2 || Settings::comboKeyAlt2<=0)) )){
                                 if (HasEnoughStamina(player, true, false)) {
                                     if (isRightHandUnarmed) PerformAction(LARightHandAction, player);
+                                    logger::info("Right Unarmed: {}",isRightHandUnarmed);
                                     PerformAction(PARightHandAction, player);
                                     return RE::BSEventNotifyControl::kContinue;
                                 }
                             
-                            } else if (isLeftHandEquiped && (!isLeftHandUnarmed || (isLeftHandUnarmed && isRightHandUnarmed)) &&
+                            } else if (isLeftHandEquiped && (!isLeftHandUnarmed || (isLeftHandUnarmed && isRightHandUnarmed)) && !(btn_event->IsHeld() && bIsBlocking) &&
                                ((keycode == Settings::leftHandKey && (isUsingCombo || Settings::comboKey<=0)) || 
                                 (keycode == Settings::leftHandKeyAlt1 && (isUsingComboAlt1 || Settings::comboKeyAlt1<=0)) || 
                                 (keycode == Settings::leftHandKeyAlt2 && (isUsingComboAlt2 || Settings::comboKeyAlt2<=0)) )){
                                 if (HasEnoughStamina(player, false, true)) {
                                     PerformAction(LALeftHandAction, player);
                                     PerformAction(PALeftHandAction, player);
+                                    logger::info("Left Unarmed: {}",isRightHandUnarmed);
                                     return RE::BSEventNotifyControl::kContinue;
                                 }
 
-                            } else if (((keycode == Settings::bothHandsKey && (isUsingCombo || Settings::comboKey<=0)) || 
+                            } else if ( !(btn_event->IsHeld() && bIsBlocking) &&
+                                       ((keycode == Settings::bothHandsKey && (isUsingCombo || Settings::comboKey<=0)) || 
                                         (keycode == Settings::bothHandsKeyAlt1 && (isUsingComboAlt1 || Settings::comboKeyAlt1<=0)) || 
                                         (keycode == Settings::bothHandsKeyAlt2 && (isUsingComboAlt2 || Settings::comboKeyAlt2<=0)) )){
                                 if (HasEnoughStamina(player, true, true)) {
@@ -123,20 +132,53 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         }
 
                         // Logic related to holding attack key with consecutive light attacks enabled
-                        if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
-                            bool bIsBlocking = false;
-                            player->GetGraphVariableBool("Isblocking", bIsBlocking);
-                            if (btn_event->IsHeld() && HasEquipedWeapon(player, false) && !bIsBlocking) {
+                        if (rightHandKeyPressed && leftHandKeyPressed && Settings::holdConsecutiveLA && Settings::consecutiveDualAttacks) {
+                            if (btn_event->IsHeld() && isLeftHandEquiped && isRightHandEquiped && !bIsBlocking) {
                                 // If the attack key is held, apply a wait time between actions
-                                float currentLAHeldTime = btn_event->heldDownSecs;
-                                if (!lightAttackWaiting) lightAttackHeldTime = currentLAHeldTime;
-                                // logger::info("Difference: {}",currentPAHeldTime - powerAttackHeldTime);
+                                float currentRightAttackHeldTime = btn_event->heldDownSecs;
+                                float currentLeftAttackHeldTime = btn_event->heldDownSecs;
+                                if (!rightAttackWaiting) rightAttackHeldTime = currentRightAttackHeldTime;
+                                if (!leftAttackWaiting) leftAttackHeldTime = currentLeftAttackHeldTime;
+                                // logger::info("Difference: {}",currentPowerAttackHeldTime - powerAttackHeldTime);
                                 // Check if wait time expired
-                                if (currentLAHeldTime - lightAttackHeldTime <= Settings::consecutiveAttacksDelay) {
-                                    lightAttackWaiting = true;
+                                if (currentRightAttackHeldTime - rightAttackHeldTime <= Settings::consecutiveAttacksDelay ||
+                                    currentLeftAttackHeldTime - leftAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                    rightAttackWaiting = true;
+                                    leftAttackWaiting = true;
+                                    PerformAction(LABothHandsAction, player);
+                                } else {
+                                    rightAttackWaiting = false;
+                                    leftAttackWaiting = false;
+                                }
+                            }
+                            return RE::BSEventNotifyControl::kContinue;
+                        } else if (IsRightHandKey(device, keycode) && Settings::holdConsecutiveLA) {
+                            if (btn_event->IsHeld() && isRightHandEquiped && !bIsBlocking) {
+                                // If the attack key is held, apply a wait time between actions
+                                float currentRightAttackHeldTime = btn_event->heldDownSecs;
+                                if (!rightAttackWaiting) rightAttackHeldTime = currentRightAttackHeldTime;
+                                // logger::info("Difference: {}",currentPowerAttackHeldTime - powerAttackHeldTime);
+                                // Check if wait time expired
+                                if (currentRightAttackHeldTime - rightAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                    rightAttackWaiting = true;
                                     PerformAction(LARightHandAction, player);
                                 } else {
-                                    lightAttackWaiting = false;
+                                    rightAttackWaiting = false;
+                                }
+                            }
+                            return RE::BSEventNotifyControl::kContinue;
+                        } else if (IsLeftHandKey(device, keycode) && Settings::holdConsecutiveLA){
+                            if (btn_event->IsHeld() && isLeftHandEquiped && !bIsBlocking) {
+                                // If the attack key is held, apply a wait time between actions
+                                float currentLeftAttackHeldTime = btn_event->heldDownSecs;
+                                if (!leftAttackWaiting) leftAttackHeldTime = currentLeftAttackHeldTime;
+                                // logger::info("Difference: {}",currentPowerAttackHeldTime - powerAttackHeldTime);
+                                // Check if wait time expired
+                                if (currentLeftAttackHeldTime - leftAttackHeldTime <= Settings::consecutiveAttacksDelay) {
+                                    leftAttackWaiting = true;
+                                    PerformAction(LALeftHandAction, player);
+                                } else {
+                                    leftAttackWaiting = false;
                                 }
                             }
                             return RE::BSEventNotifyControl::kContinue;
@@ -169,6 +211,11 @@ void InputEventHandler::GetAttackKeys(){
     rightAttackKeyMouse = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kMouse);
     rightAttackKeyGamepad = controlMap->GetMappedKey(userEvents->rightAttack, RE::INPUT_DEVICE::kGamepad);
     rightAttackKeyGamepad = SKSE::InputMap::GamepadMaskToKeycode(rightAttackKeyGamepad);
+
+    leftAttackKeyKeyboard = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kKeyboard);
+    leftAttackKeyMouse = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kMouse);
+    leftAttackKeyGamepad = controlMap->GetMappedKey(userEvents->leftAttack, RE::INPUT_DEVICE::kGamepad);
+    leftAttackKeyGamepad = SKSE::InputMap::GamepadMaskToKeycode(leftAttackKeyGamepad);
 }
 
 bool InputEventHandler::HasEquipedWeapon(const RE::PlayerCharacter* player, bool leftHand) {
@@ -213,6 +260,19 @@ bool InputEventHandler::IsRightHandKey(const RE::INPUT_DEVICE device, const std:
             return key-256 == rightAttackKeyMouse;
         case RE::INPUT_DEVICE::kGamepad:
             return key == rightAttackKeyGamepad;
+        default:
+            return false;
+    }
+}
+
+bool InputEventHandler::IsLeftHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const {
+    switch (device) {
+        case RE::INPUT_DEVICE::kKeyboard:
+            return key == leftAttackKeyKeyboard;
+        case RE::INPUT_DEVICE::kMouse:
+            return key-256 == leftAttackKeyMouse;
+        case RE::INPUT_DEVICE::kGamepad:
+            return key == leftAttackKeyGamepad;
         default:
             return false;
     }

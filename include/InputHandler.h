@@ -9,6 +9,7 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
 
     private:
         bool IsRightHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const;
+        bool IsLeftHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const;
 
         static void PerformAction(RE::BGSAction* action, RE::Actor* a);
         static bool HasEquipedWeapon(const RE::PlayerCharacter* player, bool leftHand);
@@ -22,17 +23,28 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
         RE::BGSAction* PABothHandsAction = RE::TESForm::LookupByID(0x2E2F7)->As<RE::BGSAction>();
         RE::BGSAction* LARightHandAction = RE::TESForm::LookupByID(0x13005)->As<RE::BGSAction>();
         RE::BGSAction* LALeftHandAction = RE::TESForm::LookupByID(0x13004)->As<RE::BGSAction>();
+        RE::BGSAction* LABothHandsAction = RE::TESForm::LookupByID(0x50C96)->As<RE::BGSAction>();
 
         std::uint32_t rightAttackKeyKeyboard = 255;
         std::uint32_t rightAttackKeyMouse = 255;
         std::uint32_t rightAttackKeyGamepad = 255;
 
+        std::uint32_t leftAttackKeyKeyboard = 255;
+        std::uint32_t leftAttackKeyMouse = 255;
+        std::uint32_t leftAttackKeyGamepad = 255;
+
         bool comboActive = false;
         bool comboActiveAlt1 = false;
         bool comboActiveAlt2 = false;
 
-        float lightAttackHeldTime = 0.0f;
-        bool lightAttackWaiting = false;
+        bool rightHandKeyPressed = false;
+        bool leftHandKeyPressed = false;
+
+        float rightAttackHeldTime = 0.0f;
+        bool rightAttackWaiting = false;
+
+        float leftAttackHeldTime = 0.0f;
+        bool leftAttackWaiting = false;
 
         float powerAttackHeldTime = 0.0f;
         bool powerAttackWaiting = false;
