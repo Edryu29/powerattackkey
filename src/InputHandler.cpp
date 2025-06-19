@@ -99,6 +99,8 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
 
                             if (!(btn_event->IsHeld() && bIsBlocking)){
 
+                                // Depending of the pressed keys, check for equiped weapon to trigger action
+                                // Combos take priority
                                 if (isUsingCombo && Settings::comboKey>0){
                                     if (keycode == Settings::rightHandKey && isRightHandEquiped){
                                         if (PerformRightHandPA(player)) return RE::BSEventNotifyControl::kContinue; 
@@ -130,7 +132,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                     if (keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2) isKeyWithCombo = true;
                                 }
 
-                                // Depending of the pressed keys, check for stamina cost and equiped weapon to trigger action
+                                // If key is not part of a combo or if the related combo is disabled.
                                 if (((keycode == Settings::rightHandKey && Settings::comboKey<=0) || 
                                      (keycode == Settings::rightHandKeyAlt1 && Settings::comboKeyAlt1<=0) || 
                                      (keycode == Settings::rightHandKeyAlt2 && Settings::comboKeyAlt2<=0) ) && isRightHandEquiped && !isKeyWithCombo){
@@ -145,7 +147,6 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                                             (keycode == Settings::bothHandsKeyAlt2 && Settings::comboKeyAlt2<=0) && !isKeyWithCombo){
                                     if (PerformBothHandsPA(player)) return RE::BSEventNotifyControl::kContinue; 
                                 }
-                                
 
                             }
                         }
