@@ -10,6 +10,9 @@ class InputEventHandler : public RE::BSTEventSink<RE::InputEvent*>
     private:
         bool IsRightHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const;
         bool IsLeftHandKey(const RE::INPUT_DEVICE device, const std::uint32_t key) const;
+        bool PerformRightHandPA(RE::PlayerCharacter* player);
+        bool PerformLeftHandPA(RE::PlayerCharacter* player);
+        bool PerformBothHandsPA(RE::PlayerCharacter* player);
 
         static void PerformAction(RE::BGSAction* action, RE::Actor* a);
         static bool HasEquipedWeapon(const RE::PlayerCharacter* player, bool leftHand);
