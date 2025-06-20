@@ -17,23 +17,9 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
 
     if (const auto ui{ RE::UI::GetSingleton() }) {
 
-        // Check if any menu is open
-        if (ui->GameIsPaused() || ui->IsApplicationMenuOpen() || ui->IsItemMenuOpen() || ui->IsModalMenuOpen()) {
-            return RE::BSEventNotifyControl::kContinue;
-        }
-
         if (const auto control_map{ RE::ControlMap::GetSingleton() }; control_map->IsMovementControlsEnabled()) {
             const auto player = RE::PlayerCharacter::GetSingleton();
             if (player && player->Is3DLoaded()) {
-
-                // Check if player cannot do attacks
-                const auto playerState = player->AsActorState();
-                if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
-                    playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal || playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
-                    playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal || playerState->GetFlyState() == RE::FLY_STATE::kNone)){
-                    // logger::info("Player cannot attack currently, ignoring input");
-                    return RE::BSEventNotifyControl::kContinue;
-                }
 
                 for (auto e{ *a_event }; e != nullptr; e = e->next) {
                     if (const auto btn_event{ e->AsButtonEvent() }) {
@@ -46,17 +32,22 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         if (device == kGamepad) keycode = SKSE::InputMap::GamepadMaskToKeycode(keycode);
                         if (device == kMouse) keycode = keycode + 256;
 
-                        bool isPowerAttackKey = keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
-                                               || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
-                                               || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2;
-
                         // Update state of combo keys
                         if (Settings::comboKey>0 && keycode == Settings::comboKey) comboActive = btn_event->IsPressed();
                         if (Settings::comboKeyAlt1>0 && keycode == Settings::comboKeyAlt1) comboActiveAlt1 = btn_event->IsPressed();
                         if (Settings::comboKeyAlt2>0 && keycode == Settings::comboKeyAlt2) comboActiveAlt2 = btn_event->IsPressed();
 
+                        // Check if any menu is open
+                        if (ui->GameIsPaused() || ui->IsApplicationMenuOpen() || ui->IsItemMenuOpen() || ui->IsModalMenuOpen()) {
+                            return RE::BSEventNotifyControl::kContinue;
+                        }
+
                         if (IsRightHandKey(device, keycode)) rightHandKeyPressed = btn_event->IsPressed();
                         if (IsLeftHandKey(device, keycode)) leftHandKeyPressed = btn_event->IsPressed();
+
+                        bool isPowerAttackKey = keycode == Settings::rightHandKey || keycode == Settings::leftHandKey || keycode == Settings::bothHandsKey
+                                               || keycode == Settings::rightHandKeyAlt1 || keycode == Settings::leftHandKeyAlt1 || keycode == Settings::bothHandsKeyAlt1
+                                               || keycode == Settings::rightHandKeyAlt2 || keycode == Settings::leftHandKeyAlt2 || keycode == Settings::bothHandsKeyAlt2;
 
                         // Reset variables when keys are is first pressed or up
                         if ((btn_event->IsDown() || btn_event->IsUp()) && isPowerAttackKey){
@@ -67,7 +58,7 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                             rightAttackWaiting = false;
                             rightAttackHeldTime = 0.0f;
                         }
-                            
+                                
                         bool bIsBlocking = false;
                         player->GetGraphVariableBool("Isblocking", bIsBlocking);
 
@@ -75,6 +66,15 @@ RE::BSEventNotifyControl InputEventHandler::ProcessEvent(
                         bool isRightHandUnarmed = IsHandUnarmed(player, false);
                         bool isLeftHandEquiped = HasEquipedWeapon(player, true);
                         bool isLeftHandUnarmed = IsHandUnarmed(player, true);
+
+                        // Check if player cannot do attacks
+                        const auto playerState = player->AsActorState();
+                        if (!(!player->IsInKillMove() ||  playerState->GetWeaponState() == RE::WEAPON_STATE::kDrawn ||
+                            playerState->GetSitSleepState() == RE::SIT_SLEEP_STATE::kNormal || playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal ||
+                            playerState->GetKnockState() == RE::KNOCK_STATE_ENUM::kNormal || playerState->GetFlyState() == RE::FLY_STATE::kNone)){
+                            // logger::info("Player cannot attack currently, ignoring input");
+                            return RE::BSEventNotifyControl::kContinue;
+                        }
 
                         // Check if any power attack key is being pressed
                         if (isPowerAttackKey && (btn_event->IsDown() || (btn_event->IsHeld() && Settings::holdConsecutivePA))) {
